@@ -1,0 +1,24 @@
+name: app-ads.txt
+on:
+  schedule:
+    - cron: "17 3 * * *"   # раз в сутки, 03:17 UTC
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency: app-ads
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Собрать app-ads.txt (CAS + РСЯ + AdMob + прежние строки)
+        run: python3 .github/scripts/build_app_ads.py
+      - name: Закоммитить, если изменился
+        run: |
+          if git diff --quiet -- app-ads.txt; then echo "без изменений"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app-ads.txt
+          git commit -m "app-ads.txt: автообновление $(date -u +%F)"
+          git push
